@@ -1,16 +1,17 @@
 import streamlit as st
 from PIL import Image
-
-st.set_page_config(
-    page_title = 'BudgetBuddy'
-)
-
 from pathlib import Path
 
+st.set_page_config(page_title='BudgetBuddy')
+
+# Always use Path to handle relative paths safely
 img_path = Path(__file__).parent / "images" / "banner.png"
+
+# Display image directly using Streamlit
 st.image(str(img_path))
 
-image = Image.open('images/banner.png')
+# If you want to open it with PIL (e.g. for resizing later)
+image = Image.open(img_path)
 st.image(image)
 
 st.title('Welcome to BudgetBuddy!')
