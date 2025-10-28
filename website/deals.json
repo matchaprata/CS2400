@@ -1,0 +1,129 @@
+{
+  "answered": [
+    {
+      "section_title": "Education",
+      "id": 1,
+      "latest": 1.2,
+      "q": [
+        {
+          "id": 1.1,
+          "content": {
+            "question": "Q: How can the Government better improve mental health of students?",
+            "answer": "A: The Government will be working with schools and institutes of Higher Learning to destigmatise mental health issues, strengthen peer support, recruit more full-time counsellors and have more educators trained as para-counsellors to provide all the support we can for students who need help."
+          }
+        },
+        {
+          "id": 1.2,
+          "content": {
+            "question": "Q: How can students better develop soft skills and the correct attutude to allow them to thrive?",
+            "answer": "A: There will be an implementation of a new character and citizenship curriculum to put greater emphasis on moral values and character, and spend more time on cyber-wellness and the discussion of contemporary issues."
+          }
+        }
+      ]
+    },
+    {
+      "section_title": "Environment",
+      "id": 2,
+      "latest": 2.2,
+      "q": [
+        {
+          "id": 2.1,
+          "content": {
+            "question": "Q: What is Singapore doing to increase our usage of green energy?",
+            "answer": "A: Singapore is making proactive investments in new technologies to decarbonise, and low-carbon hydrofen becomes a key player, accounting for more than half of Singapore's electricity mix."
+          }
+        },
+        {
+          "id": 2.2,
+          "content": {
+            "question": "Q: Are there any efforts made by Singapore to tackle climate change?",
+            "answer": "A: Singapore has rolled out the Green Plan, which reinforces our commitment to the 2030 Agenda and the Sustainable Development Goals adoped by the UN Member States in 2015. The Green Plan specifies targets that will enhance our food security, ensure sustainable water management, scale up deployment of clean energy, promote sustainable economic growth, green our infrastructure and industries, and position our city to be resource-efficient and climate-resilient."
+          }
+        }
+      ]
+    },
+    {
+      "section_title": "Budget 2024",
+      "id": 3,
+      "latest": 3.2,
+      "q": [
+        {
+          "id": 3.1,
+          "content": {
+            "question": "Q: What has been done to improve social mobility?",
+            "answer": "A: The Government has recently rolled out ComLink+ Progress Packages to support lower-income families with young children to improve preschool education, employment and financial stability, and save up for home ownership."
+          }
+        },
+        {
+          "id": 3.2,
+          "content": {
+            "question": "Q: How has the Government supported seniors for their retirement?",
+            "answer": "A: The Government has implemented the Majulah Package for 1.6 million Singaporeans born in 1973 or earlier to support retirement and healthcare needs. There is also increased quaterly payments from the Silver Support Scheme by 20% and raise qualifying per capita household income threshold to $2300."
+          }
+        }
+      ]
+    }
+  ],
+  "unanswered": [
+    {
+      "section_title": "Education",
+      "id": 1,
+      "q": [
+        {
+          "id": 1.1,
+          "content": {
+            "question": "Q: Is it really necessary to strictly follow school rules?",
+            "answer": ""
+          }
+        },
+        {
+          "id": 1.2,
+          "content": {
+            "question": "Q: As an adult, would you go through today's education system in Singapore?",
+            "answer": ""
+          }
+        }
+      ]
+    },
+    {
+      "section_title": "Environment",
+      "id": 2,
+      "q": [
+        {
+          "id": 2.1,
+          "content": {
+            "question": "Q: Should we fully transition to other forms of energy, away from fossil fuels?",
+            "answer": ""
+          }
+        },
+        {
+          "id": 2.2,
+          "content": {
+            "question": "Q: How can the government better educate the public about sustainability in Singapore?",
+            "answer": ""
+          }
+        }
+      ]
+    },
+    {
+      "section_title": "Budget 2024",
+      "id": 3,
+      "q": [
+        {
+          "id": 3.1,
+          "content": {
+            "question": "Q: Why wasn't there any budget set aside for climate change as a nationwide effort?",
+            "answer": ""
+          }
+        },
+        {
+          "id": 3.2,
+          "content": {
+            "question": "Q: Why is there an imbalance between budget set aside for youths and seniors?",
+            "answer": ""
+          }
+        }
+      ]
+    }
+  ]
+}
