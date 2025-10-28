@@ -5,7 +5,7 @@ st.set_page_config(
     page_title = 'BudgetBuddy'
 )
 
-image = Image.open('banner.png')
+image = Image.open('images/banner.png')
 st.image(image)
 
 st.title('Welcome to BudgetBuddy!')
