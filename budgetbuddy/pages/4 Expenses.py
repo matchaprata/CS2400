@@ -237,8 +237,9 @@ with tab2:
             )
             target_amount_o = st.number_input('Set your targeted amount.', min_value=0.0, format="%.2f", step=0.01, key="target_amount_o")
             saved_amount_o = st.number_input('How much have you saved?', min_value=0.0, format="%.2f", step=0.01, key="saved_amount_o")
-        else:
-            st.write('please select an option to proceed')
+        elif goal is None:
+            st.info("Please select a savings goal to begin.")
+            st.stop()
 
     st.subheader('Progress Tracker')
     if goal == 'Vacation':
