@@ -8,19 +8,17 @@ st.title('Managing Expenses')
 
 tab1, tab2 = st.tabs(['Tracker', 'Savings Goal'])
 
-with tab1:
-    # --- load / init ---
-    if 'expenses' not in st.session_state:
-        try:
-            st.session_state.expenses = pd.read_csv('expenses.csv')
-        except FileNotFoundError:
-            st.session_state.expenses = pd.DataFrame(columns=['Date', 'Description', 'Amount', 'Note'])
-    df = st.session_state.expenses
+# --- Session State Setup ---
+if 'expenses' not in st.session_state:
+    st.session_state.expenses = pd.DataFrame(columns=['Date', 'Description', 'Amount', 'Note'])
 
-    # --- add expense ---
+df = st.session_state.expenses
+
+with tab1:
+    # --- Add Expense ---
     with st.expander('Add New Expense'):
         with st.form('Add expense'):
-            expense_date = st.date_input('Date of Expense')
+            expense_date = st.date_input('Date of Expense', value=date.today())
             description = st.radio(
                 'Description',
                 ['Groceries', 'Utilities', 'Food', 'Transport', 'Entertainment', 'Others'],
@@ -37,57 +35,55 @@ with tab1:
                     'Note': note
                 }])
                 st.session_state.expenses = pd.concat([st.session_state.expenses, new_entry], ignore_index=True)
-                st.session_state.expenses.to_csv('expenses.csv', index=False)
-                st.success(f'Expense added: {description} - ${amount} on {expense_date}')
+                st.success(f'Expense added: {description} - ${amount:.2f} on {expense_date}')
                 st.rerun()
 
-    # --- build events (include 'id' = dataframe index) ---
-        mode = st.selectbox(
-            "📆 Calendar Mode",
-            ["Month", "Week", "Schedule", "Year"],
-            index=0
-        )
+    # --- Calendar Mode Selection ---
+    mode = st.selectbox(
+        "📆 Calendar Mode",
+        ["Month", "Week", "Schedule", "Year"],
+        index=0
+    )
 
-        # --- Calendar Config ---
-        calendar_view_map = {
-            "Month": "dayGridMonth",
-            "Week": "timeGridWeek",
-            "Schedule": "listMonth",
-            "Year": "multiMonthYear"
-        }
+    # --- Calendar Config ---
+    calendar_view_map = {
+        "Month": "dayGridMonth",
+        "Week": "timeGridWeek",
+        "Schedule": "listMonth",
+        "Year": "multiMonthYear"
+    }
 
-        calendar_options = {
-            "initialView": calendar_view_map[mode],
-            "editable": True,
-            "navLinks": True,
-            "selectable": True,
-            "headerToolbar": {
-                "left": "today prev,next",
-                "center": "title",
-                "right": "dayGridMonth,timeGridWeek,listMonth,multiMonthYear"
-            },
-        }       
-        category_colours = {
-                'Groceries': 'green',
-                'Utilities': 'orange',
-                'Food': 'blue',
-                'Transport': 'black',
-                'Entertainment': 'purple',
-                'Others': 'brown'
-            }
+    calendar_options = {
+        "initialView": calendar_view_map[mode],
+        "editable": True,
+        "navLinks": True,
+        "selectable": True,
+        "headerToolbar": {
+            "left": "today prev,next",
+            "center": "title",
+            "right": "dayGridMonth,timeGridWeek,listMonth,multiMonthYear"
+        },
+    }
 
+    category_colours = {
+        'Groceries': 'green',
+        'Utilities': 'orange',
+        'Food': 'blue',
+        'Transport': 'black',
+        'Entertainment': 'purple',
+        'Others': 'brown'
+    }
+
+    # --- Build Events ---
     events = []
     for idx, row in st.session_state.expenses.reset_index().iterrows():
-        # use the original DataFrame index as the id (so deletion maps back correctly)
-        # if you reset_index above, 'index' column contains original index — use that if present
         original_index = row.get('index', idx)
         events.append({
             'id': str(original_index),
             'title': f"{row['Description']} - ${float(row['Amount']):.2f}",
             'start': str(row['Date']),
-            'color': category_colours.get(str(row['Description']))
+            'color': category_colours.get(str(row['Description']), 'gray')
         })
-
 
     st.subheader("Expense Calendar")
     state = calendar(
@@ -100,85 +96,31 @@ with tab1:
         key="expense_calendar",
     )
 
-    # --- robust event-click handling + deletion ---
-    # We try to find the clicked event info in several possible places returned by the component.
+    # --- Event Click/Delete Handling ---
     clicked_event = None
-    # Common keys that different versions might return; check them in order
-    possible_paths = [
-        ("eventClick", lambda s: s.get("eventClick")),
-        ("event", lambda s: s.get("event")),
-        ("clickedEvent", lambda s: s.get("clickedEvent")),
-        ("eventClicked", lambda s: s.get("eventClicked")),
-        ("events", lambda s: s.get("event") or None),
-        ("eventsSet", lambda s: None),  # eventsSet used for full event list; kept for reference
-    ]
+    if isinstance(state, dict):
+        for key in ["eventClick", "event", "clickedEvent", "eventClicked"]:
+            if key in state and state[key]:
+                val = state[key]
+                if isinstance(val, dict) and 'id' in val:
+                    clicked_event = val
+                    break
 
-    for name, fn in possible_paths:
-        val = None
-        try:
-            val = fn(state)
-        except Exception:
-            val = None
-        if val:
-            # some shapes wrap event under 'event' or return a dict directly
-            if isinstance(val, dict) and ("event" in val and isinstance(val["event"], dict)):
-                clicked_event = val["event"]
-            elif isinstance(val, dict) and ("id" in val or "title" in val):
-                clicked_event = val
-            else:
-                # val could be like {"event": {...}} or other shape - try to inspect deeper
-                # attempt to find first dict with 'id' in nested values
-                if isinstance(val, dict):
-                    for v in val.values():
-                        if isinstance(v, dict) and v.get("id") is not None:
-                            clicked_event = v
-                            break
-        if clicked_event:
-            break
-
-    # If we found a clicked_event, show confirm and delete by id
     if clicked_event:
-        # defensive: id may be nested or numeric string
-        event_id = clicked_event.get("id") or clicked_event.get("extendedProps", {}).get("id")
+        event_id = clicked_event.get("id")
         event_title = clicked_event.get("title", "Unnamed event")
         st.warning(f"You clicked: {event_title}")
         if st.button(f"Confirm delete: {event_title}"):
-            # Map id to integer index — original id saved as string of dataframe index
             try:
                 idx_to_delete = int(event_id)
-            except Exception:
-                # sometimes id may be the position; attempt to match by title+date as fallback
-                idx_to_delete = None
-
-            if idx_to_delete is not None and (idx_to_delete in st.session_state.expenses.index):
-                st.session_state.expenses = st.session_state.expenses.drop(idx_to_delete).reset_index(drop=True)
-                st.session_state.expenses.to_csv('expenses.csv', index=False)
-                st.success(f"Deleted: {event_title}")
-                st.rerun()
-            else:
-                # fallback: try to find matching row by title (description + amount) and date
-                # parse title into description & amount (best-effort)
-                import re
-                m = re.match(r"^(.*?) - \$?([\d\.,]+)", event_title)
-                description_part = m.group(1).strip() if m else None
-                amount_part = float(m.group(2).replace(',', '')) if (m and m.group(2)) else None
-
-                candidate_idx = None
-                for i, row in st.session_state.expenses.iterrows():
-                    if description_part and description_part.lower() in str(row['Description']).lower():
-                        if amount_part is None or abs(float(row['Amount']) - amount_part) < 0.01:
-                            candidate_idx = i
-                            break
-                if candidate_idx is not None:
-                    st.session_state.expenses = st.session_state.expenses.drop(candidate_idx).reset_index(drop=True)
-                    st.session_state.expenses.to_csv('expenses.csv', index=False)
-                    st.success(f"Deleted (fallback match): {event_title}")
+                if idx_to_delete in st.session_state.expenses.index:
+                    st.session_state.expenses = st.session_state.expenses.drop(idx_to_delete).reset_index(drop=True)
+                    st.success(f"Deleted: {event_title}")
                     st.rerun()
-                else:
-                    st.error("Could not map clicked event to an expenses row. See debug output below for the calendar state.")
+            except Exception:
+                st.error("Could not delete event.")
 
-
-    # --- pie chart (summary) ---
+    # --- Pie Chart ---
     if not st.session_state.expenses.empty:
         category_summary = st.session_state.expenses.groupby('Description')['Amount'].sum().to_dict()
         fig, ax = plt.subplots()
@@ -188,6 +130,7 @@ with tab1:
         st.info("No expense data to visualize yet.")
 
 
+# ---------------- TAB 2: Savings Goal ----------------
 with tab2:
     with st.expander('What are you saving up for?', expanded=True):
         goal = st.radio(
@@ -195,84 +138,49 @@ with tab2:
             ['Vacation', 'Education', 'Emergency Fund', 'Others'],
             horizontal=True,
             index=None,
-            key="goal_radio"  # important for session state tracking
+            key="goal_radio"
         )
 
-        # ✅ Reset logic: must come immediately after the radio
         if "last_goal" not in st.session_state or st.session_state.last_goal != goal:
-            # Reset widget state values
-            st.session_state.target_amount_vac = 0.0
-            st.session_state.saved_amount_vac = 0.0
-            st.session_state.target_amount_edu = 0.0
-            st.session_state.saved_amount_edu = 0.0
-            st.session_state.target_amount_em = 0.0
-            st.session_state.saved_amount_em = 0.0
-            st.session_state.target_amount_o = 0.0
-            st.session_state.saved_amount_o = 0.0
-
-            # Remember the current selection
+            # reset values when switching goals
+            for key in [
+                "target_amount_vac", "saved_amount_vac",
+                "target_amount_edu", "saved_amount_edu",
+                "target_amount_em", "saved_amount_em",
+                "target_amount_o", "saved_amount_o"
+            ]:
+                st.session_state[key] = 0.0
             st.session_state.last_goal = goal
-        
+
         if goal == 'Vacation':
-            st.write(
-                'How exciting! A getaway awaits you.'
-            )
-            target_amount_vac = st.number_input('Set your targeted amount.', min_value=0.0, format="%.2f", step=0.01, key="target_amount_vac")
-            saved_amount_vac = st.number_input('How much have you saved?', min_value=0.0, format="%.2f", step=0.01, key="saved_amount_vac")
+            st.write('How exciting! A getaway awaits you.')
+            target = st.number_input('Target Amount', 0.0, format="%.2f", key="target_amount_vac")
+            saved = st.number_input('Saved Amount', 0.0, format="%.2f", key="saved_amount_vac")
+
         elif goal == 'Education':
-            st.write(
-                'What an admirable goal! Investing in knowledge pays the best interest.'
-            )
-            target_amount_edu = st.number_input('Set your targeted amount.', min_value=0.0, format="%.2f", step=0.01, key="target_amount_edu")
-            saved_amount_edu = st.number_input('How much have you saved?', min_value=0.0, format="%.2f", step=0.01, key="saved_amount_edu")
+            st.write('What an admirable goal! Investing in knowledge pays the best interest.')
+            target = st.number_input('Target Amount', 0.0, format="%.2f", key="target_amount_edu")
+            saved = st.number_input('Saved Amount', 0.0, format="%.2f", key="saved_amount_edu")
+
         elif goal == 'Emergency Fund':
-            st.write(
-                'Good choice! Having an emergency fund provides peace of mind during unexpected situations.'
-            )
-            target_amount_em = st.number_input('Set your targeted amount.', min_value=0.0, format="%.2f", step=0.01, key="target_amount_em")
-            saved_amount_em = st.number_input('How much have you saved?', min_value=0.0, format="%.2f", step=0.01, key="saved_amount_em")
+            st.write('Good choice! Having an emergency fund provides peace of mind.')
+            target = st.number_input('Target Amount', 0.0, format="%.2f", key="target_amount_em")
+            saved = st.number_input('Saved Amount', 0.0, format="%.2f", key="saved_amount_em")
+
         elif goal == 'Others':
-            st.text_area(
-                'Describe your savings goal here.'
-            )
-            target_amount_o = st.number_input('Set your targeted amount.', min_value=0.0, format="%.2f", step=0.01, key="target_amount_o")
-            saved_amount_o = st.number_input('How much have you saved?', min_value=0.0, format="%.2f", step=0.01, key="saved_amount_o")
+            st.text_area('Describe your savings goal here.')
+            target = st.number_input('Target Amount', 0.0, format="%.2f", key="target_amount_o")
+            saved = st.number_input('Saved Amount', 0.0, format="%.2f", key="saved_amount_o")
+
         else:
-            st.write('please select an option to proceed')
+            target = 0.0
+            saved = 0.0
+            st.info('Please select an option to proceed.')
 
     st.subheader('Progress Tracker')
-    if goal == 'Vacation':
-        if target_amount_vac > 0:
-            progress = min(saved_amount_vac / target_amount_vac, 1.0)  # Cap at 100%
-        else:
-            progress = 0.0
-            
+    if target > 0:
+        progress = min(saved / target, 1.0)
         progress_text = f"You've saved {progress*100:.2f}% of your target!"
         st.progress(progress, text=progress_text)
-
-    elif goal == 'Education':
-        if target_amount_edu > 0:
-            progress = min(saved_amount_edu / target_amount_edu, 1.0)  # Cap at 100%
-        else:
-            progress = 0.0
-            
-        progress_text = f"You've saved {progress*100:.2f}% of your target!"
-        st.progress(progress, text=progress_text)
-
-    elif goal == 'Emergency Fund':
-        if target_amount_em > 0:
-            progress = min(saved_amount_em / target_amount_em, 1.0)  # Cap at 100%
-        else:
-            progress = 0.0
-            
-        progress_text = f"You've saved {progress*100:.2f}% of your target!"
-        st.progress(progress, text=progress_text)
-
     else:
-        if target_amount_o > 0:
-            progress = min(saved_amount_o / target_amount_o, 1.0)  # Cap at 100%
-        else:
-            progress = 0.0
-            
-        progress_text = f"You've saved {progress*100:.2f}% of your target!"
-        st.progress(progress, text=progress_text)
+        st.info("Set a target amount to start tracking your savings progress.")
