@@ -22,19 +22,19 @@ with tab1:
         '- United Overseas Bank (UOB)'
     )
     st.write(
-        'Up to 1.20% per annum for a 6-month tenor, with a minimum of S$10,000.'
+        'Up to **1.20%** per annum for a **6-month** tenor, with a minimum of S$10,000.'
     )
     st.write(
         '- DBS Bank'
     )
     st.write(
-        'Up to 1.60% per annum for a 8-month tenor, with a minimum of S$1,000.'
+        'Up to **1.60%** per annum for a **8-month** tenor, with a minimum of S$1,000.'
     )
     st.write(
         '- OCBC Bank'
     )
     st.write(
-        'Up to 1.15% per annum for a 9-month tenor, with a minimum of S$20,000.'
+        'Up to **1.15%** per annum for a **9-month** tenor, with a minimum of S$20,000.'
     )
     
 with tab2:
