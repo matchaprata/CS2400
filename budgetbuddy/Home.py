@@ -5,13 +5,10 @@ st.set_page_config(
     page_title = 'BudgetBuddy'
 )
 
-import os
-st.write("Current directory:", os.getcwd())
-st.write("Files here:", os.listdir())
-if os.path.exists("images/banner.png"):
-    st.success("✅ Image found in this directory!")
-else:
-    st.error("❌ Image not found at images/banner.png")
+from pathlib import Path
+
+img_path = Path(__file__).parent / "images" / "banner.png"
+st.image(str(img_path))
 
 image = Image.open('images/banner.png')
 st.image(image)
