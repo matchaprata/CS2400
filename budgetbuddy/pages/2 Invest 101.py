@@ -1,5 +1,5 @@
 import streamlit as st
-from openai import OpenAI
+import requests
 
 st.title('Getting started')
 st.write(
@@ -146,7 +146,8 @@ with tab2:
         '- [MoneySense](https://www.moneysense.gov.sg/): A Singapore government initiative that provides educational resources on personal finance and investing.'
     )
 
-    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    API_URL = "https://api-inference.huggingface.co/models/gpt2"
+    HEADERS = {"Authorization": f"Bearer {st.secrets['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']}"}
     st.title('Ask BudgetBuddy')
 
     if 'messages' not in st.session_state:
@@ -157,12 +158,19 @@ with tab2:
     if prompt := st.chat_input("What is investing?"):
         st.chat_message("user").markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
+
+        full_prompt = '\n'.join([f'{m['role']}: {m['content']}' for m in st.session_state.messages])
         
     with st.chat_message('assistant'):
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=st.session_state.messages
+        with st.spinner('Thinking...'):
+            response = requests.post(
+                API_URL,
+                headers=HEADERS,
+                json={"inputs": full_prompt, 'parameters': {"max_new_tokens": 150}},
         )
-        reply = response.choices[0].message.content
-        st.markdown(reply)
-    st.session_state.messages.append({"role": "assistant", "content": response.choices[0].message.content})
+            if response.status_code == 150:
+                reply = response.json()[0]['generated text'].split('assistant: ')[-1].strip()
+            else:
+                reply = f'Error: {response.status_code} - {response.text}'
+        
+            st.markdown(reply)
