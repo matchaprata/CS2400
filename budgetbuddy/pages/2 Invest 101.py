@@ -62,11 +62,11 @@ with tab2:
 
     st.subheader('Ask BudgetBuddy')
 
-    # Initialize session state
+    # Initialize conversation history
     if 'messages' not in st.session_state:
         st.session_state.messages = []
 
-    # Display conversation history
+    # Display previous messages
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
@@ -80,7 +80,7 @@ with tab2:
         st.chat_message("user").markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-        # Truncate last 6 messages (3 user + 3 assistant) to prevent huge prompts
+        # Keep only last 6 messages (3 user + 3 assistant) to reduce prompt size
         recent_messages = st.session_state.messages[-6:]
 
         # Build structured prompt
@@ -92,21 +92,21 @@ with tab2:
                 full_prompt += f"Assistant: {msg['content']}\n"
         full_prompt += "Assistant:"
 
-        # Generate response
+        # Generate AI response
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 reply = ""
                 try:
                     result = client.text_generation(
-                        model="tiiuae/falcon-3b-instruct",
+                        model="OpenAssistant/oa-mini-7b",
                         prompt=full_prompt,
-                        max_new_tokens=100,
+                        max_new_tokens=150,
                         do_sample=True,
                         temperature=0.7,
-                        max_time=60.0
+                        max_time=30.0  # safe timeout for Streamlit Cloud
                     )
 
-                    # Simplified extraction
+                    # Extract text
                     if isinstance(result, list) and result and "generated_text" in result[0]:
                         raw_reply = result[0]["generated_text"]
                     elif isinstance(result, str):
@@ -118,12 +118,12 @@ with tab2:
                     reply = raw_reply.split("Assistant:")[-1].strip()
 
                     if not reply:
-                        reply = "Sorry, BudgetBuddy couldn't generate a response. Try asking differently."
+                        reply = "BudgetBuddy couldn't generate a response. Try asking differently."
 
                 except Exception:
                     print("--- CHATBOT ERROR ---")
                     print(traceback.format_exc())
-                    reply = "BudgetBuddy failed to respond. This is likely a timeout or connection issue."
+                    reply = "BudgetBuddy failed to respond due to a connection issue. Please try again."
 
                 st.markdown(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
