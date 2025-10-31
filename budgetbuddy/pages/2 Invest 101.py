@@ -62,68 +62,68 @@ with tab2:
 
     st.subheader('Ask BudgetBuddy')
 
-# Initialize session state
-if 'messages' not in st.session_state:
-    st.session_state.messages = []
+    # Initialize session state
+    if 'messages' not in st.session_state:
+        st.session_state.messages = []
 
-# Display conversation history
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+    # Display conversation history
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
 
-# Hugging Face client
-HF_TOKEN = st.secrets["HF_TOKEN"]
-client = InferenceClient(HF_TOKEN)
+    # Hugging Face client
+    HF_TOKEN = st.secrets["HF_TOKEN"]
+    client = InferenceClient(HF_TOKEN)
 
-# User input
-if prompt := st.chat_input("Ask BudgetBuddy anything"):
-    st.chat_message("user").markdown(prompt)
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    # User input
+    if prompt := st.chat_input("Ask BudgetBuddy anything"):
+        st.chat_message("user").markdown(prompt)
+        st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # Truncate last 6 messages (3 user + 3 assistant) to prevent huge prompts
-    recent_messages = st.session_state.messages[-6:]
+        # Truncate last 6 messages (3 user + 3 assistant) to prevent huge prompts
+        recent_messages = st.session_state.messages[-6:]
 
-    # Build structured prompt
-    full_prompt = ""
-    for msg in recent_messages:
-        if msg["role"] == "user":
-            full_prompt += f"User: {msg['content']}\n"
-        else:
-            full_prompt += f"Assistant: {msg['content']}\n"
-    full_prompt += "Assistant:"
+        # Build structured prompt
+        full_prompt = ""
+        for msg in recent_messages:
+            if msg["role"] == "user":
+                full_prompt += f"User: {msg['content']}\n"
+            else:
+                full_prompt += f"Assistant: {msg['content']}\n"
+        full_prompt += "Assistant:"
 
-    # Generate response
-    with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
-            reply = ""
-            try:
-                result = client.text_generation(
-                    model="tiiuae/falcon-3b-instruct",
-                    prompt=full_prompt,
-                    max_new_tokens=100,
-                    do_sample=True,
-                    temperature=0.7,
-                    max_time=60.0
-                )
+        # Generate response
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                reply = ""
+                try:
+                    result = client.text_generation(
+                        model="tiiuae/falcon-3b-instruct",
+                        prompt=full_prompt,
+                        max_new_tokens=100,
+                        do_sample=True,
+                        temperature=0.7,
+                        max_time=60.0
+                    )
 
-                # Simplified extraction
-                if isinstance(result, list) and result and "generated_text" in result[0]:
-                    raw_reply = result[0]["generated_text"]
-                elif isinstance(result, str):
-                    raw_reply = result
-                else:
-                    raw_reply = ""
+                    # Simplified extraction
+                    if isinstance(result, list) and result and "generated_text" in result[0]:
+                        raw_reply = result[0]["generated_text"]
+                    elif isinstance(result, str):
+                        raw_reply = result
+                    else:
+                        raw_reply = ""
 
-                # Remove prompt echoes
-                reply = raw_reply.split("Assistant:")[-1].strip()
+                    # Remove prompt echoes
+                    reply = raw_reply.split("Assistant:")[-1].strip()
 
-                if not reply:
-                    reply = "Sorry, BudgetBuddy couldn't generate a response. Try asking differently."
+                    if not reply:
+                        reply = "Sorry, BudgetBuddy couldn't generate a response. Try asking differently."
 
-            except Exception:
-                print("--- CHATBOT ERROR ---")
-                print(traceback.format_exc())
-                reply = "BudgetBuddy failed to respond. This is likely a timeout or connection issue."
+                except Exception:
+                    print("--- CHATBOT ERROR ---")
+                    print(traceback.format_exc())
+                    reply = "BudgetBuddy failed to respond. This is likely a timeout or connection issue."
 
-            st.markdown(reply)
-            st.session_state.messages.append({"role": "assistant", "content": reply})
+                st.markdown(reply)
+                st.session_state.messages.append({"role": "assistant", "content": reply})
