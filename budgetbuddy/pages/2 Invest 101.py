@@ -159,7 +159,7 @@ with tab2:
         st.chat_message("user").markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-        full_prompt = '\n'.join([f'{m['role']}: {m['content']}' for m in st.session_state.messages])
+        full_prompt = '\n'.join([f"{m['role']}: {m['content']}" for m in st.session_state.messages])
         
     with st.chat_message('assistant'):
         with st.spinner('Thinking...'):
