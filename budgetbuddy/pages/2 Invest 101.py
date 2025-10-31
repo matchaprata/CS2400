@@ -163,8 +163,6 @@ with tab2:
     with st.chat_message('assistant'):
         with st.spinner('Thinking...'):
             response = requests.post(
-                API_URL,
-                headers=HEADERS,
                 json={"inputs": full_prompt, 'parameters': {"max_new_tokens": 150}},
         )
             if response.status_code == 150:
