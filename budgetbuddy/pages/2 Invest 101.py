@@ -166,9 +166,9 @@ with tab2:
             response = requests.post(
                 API_URL,
                 headers=HEADERS,
-                json={"inputs": full_prompt, 'parameters': {"max_new_tokens": 150}},
+                json={"inputs": full_prompt, 'parameters': {"max_new_tokens": 200}},
         )
-            if response.status_code == 150:
+            if response.status_code == 200:
                 reply = response.json()[0]['generated text'].split('assistant: ')[-1].strip()
             else:
                 reply = f'Error: {response.status_code} - {response.text}'
