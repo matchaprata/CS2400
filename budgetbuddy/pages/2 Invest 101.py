@@ -1,5 +1,7 @@
 import streamlit as st
 import requests
+import os
+from huggingface_hub import InferenceClient
 
 st.title('Getting started')
 st.write(
@@ -146,7 +148,7 @@ with tab2:
         '- [MoneySense](https://www.moneysense.gov.sg/): A Singapore government initiative that provides educational resources on personal finance and investing.'
     )
 
-    api_key = st.secrets["HF_TOKEN"]
+    client = InferenceClient(api_key=os.environ["HF_TOKEN"])
     st.subheader('Ask BudgetBuddy')
 
     if 'messages' not in st.session_state:
