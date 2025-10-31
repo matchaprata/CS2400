@@ -146,7 +146,7 @@ with tab2:
         '- [MoneySense](https://www.moneysense.gov.sg/): A Singapore government initiative that provides educational resources on personal finance and investing.'
     )
 
-    client = OpenAI(api_key=st.secrets["openai_api_key"])
+    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
     st.title('Ask BudgetBuddy')
 
     if 'messages' not in st.session_state:
