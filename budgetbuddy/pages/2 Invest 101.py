@@ -62,68 +62,58 @@ with tab2:
 
     st.subheader('Ask BudgetBuddy')
 
-    # Initialize conversation history
+    st.subheader("Ask BudgetBuddy")
+
+    # Initialize session state
     if 'messages' not in st.session_state:
         st.session_state.messages = []
 
-    # Display previous messages
+    # Display conversation history
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # Hugging Face client
-    HF_TOKEN = st.secrets["HF_TOKEN"]
-    client = InferenceClient(HF_TOKEN)
+    # Load tiny model (fits in Streamlit Cloud)
+    @st.cache_resource(show_spinner=False)
+    def load_model():
+        tokenizer = AutoTokenizer.from_pretrained("gpt2-medium")
+        model = AutoModelForCausalLM.from_pretrained("gpt2-medium")
+        return tokenizer, model
+
+    tokenizer, model = load_model()
 
     # User input
     if prompt := st.chat_input("Ask BudgetBuddy anything"):
         st.chat_message("user").markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-        # Keep only last 6 messages (3 user + 3 assistant) to reduce prompt size
-        recent_messages = st.session_state.messages[-6:]
-
-        # Build structured prompt
+        # Keep last 6 messages to avoid long prompt
+        recent_msgs = st.session_state.messages[-6:]
         full_prompt = ""
-        for msg in recent_messages:
-            if msg["role"] == "user":
-                full_prompt += f"User: {msg['content']}\n"
-            else:
-                full_prompt += f"Assistant: {msg['content']}\n"
+        for msg in recent_msgs:
+            role = "User" if msg["role"] == "user" else "Assistant"
+            full_prompt += f"{role}: {msg['content']}\n"
         full_prompt += "Assistant:"
 
-        # Generate AI response
+        # Generate response
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
-                reply = ""
                 try:
-                    result = client.text_generation(
-                        model="OpenAssistant/oa-mini-7b",
-                        prompt=full_prompt,
+                    inputs = tokenizer(full_prompt, return_tensors="pt")
+                    outputs = model.generate(
+                        **inputs,
                         max_new_tokens=150,
                         do_sample=True,
                         temperature=0.7,
-                        max_time=30.0  # safe timeout for Streamlit Cloud
+                        pad_token_id=tokenizer.eos_token_id
                     )
-
-                    # Extract text
-                    if isinstance(result, list) and result and "generated_text" in result[0]:
-                        raw_reply = result[0]["generated_text"]
-                    elif isinstance(result, str):
-                        raw_reply = result
-                    else:
-                        raw_reply = ""
-
-                    # Remove prompt echoes
-                    reply = raw_reply.split("Assistant:")[-1].strip()
-
+                    reply = tokenizer.decode(outputs[0], skip_special_tokens=True)
+                    reply = reply.split("Assistant:")[-1].strip()
                     if not reply:
                         reply = "BudgetBuddy couldn't generate a response. Try asking differently."
-
-                except Exception:
-                    print("--- CHATBOT ERROR ---")
-                    print(traceback.format_exc())
-                    reply = "BudgetBuddy failed to respond due to a connection issue. Please try again."
+                except Exception as e:
+                    print("ERROR:", e)
+                    reply = "BudgetBuddy failed to respond due to an internal error."
 
                 st.markdown(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
