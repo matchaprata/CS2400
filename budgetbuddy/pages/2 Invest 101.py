@@ -6,7 +6,7 @@ st.write(
     'Not sure how to begin investing? Look no further! This guide will walk you through the basics of investing, helping you make informed decisions to grow your wealth over time.'
 )
 
-tab1, tab2 = st.tabs(['Types of Investments', 'Resources to learn more'])
+tab1, tab2, tab3 = st.tabs(['Types of Investments', 'Resources to learn more', 'Ask BudgetBuddy'])
 
 # Tab 1: Investment guide
 with tab1:
@@ -58,7 +58,12 @@ with tab2:
         '- [MoneySense](https://www.moneysense.gov.sg/)'
     )
 
+    
+with tab3:    
     st.subheader('Ask BudgetBuddy')
+    st.write(
+        'Ask BudgetBuddy for personalized advice and information!'
+    )
 
     # Initialize conversation history
     if 'messages' not in st.session_state:

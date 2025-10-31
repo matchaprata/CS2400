@@ -1,9 +1,10 @@
 import streamlit as st
+import openai
 
 st.title('Tips and Hacks to Save Money')
 st.write(
     'Looking to save money and make the most out of your finances? This guide provides practical tips and hacks to help you cut costs and boost your savings effectively.')
-tab1, tab2 = st.tabs(['Savings account', 'Good practices when shopping'])
+tab1, tab2, tab3 = st.tabs(['Savings account', 'Good practices when shopping', 'Ask BudgetBuddy'])
 
 with tab1:
     st.header('Fixed deposit rates')
@@ -57,3 +58,59 @@ with tab2:
     st.write(
         '- Avoid shopping when hungry: Shopping on an empty stomach can lead to unnecessary purchases, especially of food items. Eat before you go shopping to avoid this temptation.'
     )
+
+    with tab3:
+        st.subheader('Ask BudgetBuddy')
+        st.write(
+        'Ask BudgetBuddy for personalized advice and information!'
+    )
+
+        # Initialize conversation history
+        if 'messages' not in st.session_state:
+            st.session_state.messages = []
+
+        # Display conversation history
+        for msg in st.session_state.messages:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+
+        # Set OpenAI API key from Streamlit secrets
+        openai.api_key = st.secrets["OPENAI_API_KEY"]
+
+        # User input
+        prompt = st.chat_input("Ask BudgetBuddy anything")
+        if prompt:
+            st.chat_message("user").markdown(prompt)
+            st.session_state.messages.append({"role": "user", "content": prompt})
+
+            # Build last 6 messages for context
+            recent_msgs = st.session_state.messages[-6:]
+            chat_messages = []
+            for msg in recent_msgs:
+                role = "user" if msg["role"] == "user" else "assistant"
+                chat_messages.append({"role": role, "content": msg["content"]})
+
+            # Generate response
+            with st.chat_message("assistant"):
+                with st.spinner("Thinking..."):
+                    try:
+                        response = openai.ChatCompletion.create(
+                            model="gpt-3.5-turbo",
+                            messages=chat_messages,
+                            temperature=0.7,
+                            max_tokens=200
+                        )
+                        reply = response.choices[0].message.content.strip()
+                    except Exception as e:
+                        st.error(f"Error from OpenAI: {e}")
+                        reply = "BudgetBuddy failed to respond. Please try again."
+
+                    st.markdown(reply)
+                    st.session_state.messages.append({"role": "assistant", "content": reply})
+
+        # Reset chat button
+        if st.button("Reset Chat"):
+            st.session_state.messages = []
+            st.experimental_rerun()
+
+        
