@@ -90,14 +90,13 @@ with tab2:
                 full_prompt += f"Assistant: {msg['content']}\n"
         full_prompt += "Assistant:" # This is crucial to prompt the model to generate the next assistant response
 
-        # Get AI response from Falcon 7B model
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 reply = ""
                 try:
                     # Using the corrected 'prompt' keyword
                     result = client.text_generation(
-                        model="tiiuae/falcon-7b-instruct",
+                        model="tiiuae/falcon-7b-chat",
                         prompt=full_prompt, 
                         max_new_tokens=100,
                         # Adding settings to increase stability
