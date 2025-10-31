@@ -1,24 +1,7 @@
 import streamlit as st
 import os
+import traceback
 from huggingface_hub import InferenceClient
-
-# --- Streamlit Cloud / HF Token Setup ---
-# The correct way to handle this in Streamlit Cloud is using st.secrets.
-# We modify the initialization to be more robust for different environments.
-try:
-    # 1. Try to read from Streamlit secrets (Cloud environment)
-    hf_token = st.secrets.get("HF_TOKEN")
-except:
-    # 2. Fallback to standard environment variable
-    hf_token = os.environ.get("HF_TOKEN", None)
-
-if not hf_token:
-    # If token is still missing, display a warning placeholder instead of crashing the app
-    st.warning("Hugging Face API Token (HF_TOKEN) not found. Chatbot functionality may be disabled. Please configure it in st.secrets.")
-
-# Initialize InferenceClient
-# The 'token' argument is the preferred way to pass the API key.
-client = InferenceClient(token=hf_token)
 
 st.title('Getting started')
 st.write(
@@ -88,50 +71,64 @@ with tab2:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
+    HF_TOKEN = st.secrets["HF_TOKEN"]  # make sure you have this in your Streamlit secrets
+    client = InferenceClient(HF_TOKEN)
+
     # User input
     if prompt := st.chat_input("Ask BudgetBuddy anything"):
         # Display user message
         st.chat_message("user").markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-        # Build full prompt for AI by joining all previous messages
-        full_prompt = '\n'.join([f"{m['role']}: {m['content']}" for m in st.session_state.messages])
+        # --- MODIFIED: Use a better structured prompt for Instruction-tuned models ---
+        # The Falcon-7b-instruct model sometimes prefers a structured format.
+        full_prompt = ""
+        for msg in st.session_state.messages:
+            if msg["role"] == "user":
+                full_prompt += f"User: {msg['content']}\n"
+            else:
+                full_prompt += f"Assistant: {msg['content']}\n"
+        full_prompt += "Assistant:" # This is crucial to prompt the model to generate the next assistant response
 
         # Get AI response from Falcon 7B model
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
+                reply = ""
                 try:
                     # Using the corrected 'prompt' keyword
                     result = client.text_generation(
-                        model="tiiuae/falcon-7b",
+                        model="tiiuae/falcon-7b-instruct",
                         prompt=full_prompt, 
-                        max_new_tokens=200
+                        max_new_tokens=200,
+                        # Adding settings to increase stability
+                        do_sample=True,
+                        temperature=0.7,
+                        max_time=30.0 # Set a max time to prevent infinite waiting
                     )
                     
-                    # Process the result
+                    # --- MODIFIED: Robust processing of the result ---
                     raw_reply = ""
                     if isinstance(result, str):
                         raw_reply = result
                     elif isinstance(result, list) and result and "generated_text" in result[0]:
                          raw_reply = result[0]["generated_text"]
                     else:
-                        raw_reply = "Could not parse model response."
+                        raise ValueError(f"Model returned unparseable content: {result}")
                         
-                    # Clean up the reply
-                    reply = raw_reply.split("assistant:")[-1].strip()
+                    # Clean up the reply, removing the prompt history the model might echo back
+                    reply = raw_reply.split("Assistant:")[-1].split("assistant:")[-1].strip()
                     
                     if not reply:
-                        reply = "Sorry, BudgetBuddy couldn't generate a response for that query."
+                        reply = "Sorry, BudgetBuddy generated an empty response for that query. This often happens if the model is too busy."
                         
                 except Exception as e:
-                    # IMPORTANT: Print the full exception to the console for detailed debugging
-                    import traceback
+                    # Print the full exception to the console for detailed debugging
                     print("--- CHATBOT ERROR DETAILS ---")
                     print(traceback.format_exc())
                     print("-----------------------------")
                     
                     # Display a simplified error to the user
-                    reply = "Sorry, BudgetBuddy is having trouble connecting to the model right now. Please check your **HF_TOKEN** configuration or try again later."
+                    reply = "Sorry, BudgetBuddy failed to generate a response. This could be due to a timeout or connection issue with the model endpoint. Please try again."
 
             st.markdown(reply)
             st.session_state.messages.append({"role": "assistant", "content": reply})
