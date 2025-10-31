@@ -107,4 +107,12 @@ with tab2:
         st.session_state.messages = []
         st.experimental_rerun()
 
-    st.write("API Key loaded:", "Yes" if st.secrets["OPENAI_API_KEY"] else "No")
+    response = openai.ChatCompletion.create(
+    model="gpt-3.5-turbo",
+    messages=chat_messages,
+    temperature=0.7,
+    max_tokens=200
+    )
+    reply = response.choices[0].message.content.strip()
+    st.write(reply)  # debug
+
