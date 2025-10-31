@@ -103,7 +103,7 @@ with tab2:
                 try:
                     # Using the corrected 'prompt' keyword
                     result = client.text_generation(
-                        model="tiiuae/falcon-7b-instruct",
+                        model="tiiuae/falcon-7b",
                         prompt=full_prompt, 
                         max_new_tokens=200
                     )
