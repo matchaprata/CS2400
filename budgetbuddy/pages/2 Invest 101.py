@@ -1,6 +1,5 @@
 import streamlit as st
-from huggingface_hub import InferenceClient
-import traceback
+import openai
 
 st.title('Getting started')
 st.write(
@@ -65,59 +64,45 @@ with tab2:
     if 'messages' not in st.session_state:
         st.session_state.messages = []
 
-    # Display previous messages
+    # Display conversation history
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # Hugging Face client
-    HF_TOKEN = st.secrets["HF_TOKEN"]  # store your token in Streamlit secrets
-    client = InferenceClient(HF_TOKEN)
+    # Set OpenAI API key from Streamlit secrets
+    openai.api_key = st.secrets["OPENAI_API_KEY"]
 
     # User input
     if prompt := st.chat_input("Ask BudgetBuddy anything"):
         st.chat_message("user").markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-        # Keep last 6 messages to avoid huge prompts
-        recent_messages = st.session_state.messages[-6:]
-        full_prompt = ""
-        for msg in recent_messages:
-            role = "User" if msg["role"] == "user" else "Assistant"
-            full_prompt += f"{role}: {msg['content']}\n"
-        full_prompt += "Assistant:"
+        # Keep last 6 messages for context
+        recent_msgs = st.session_state.messages[-6:]
+        chat_messages = []
+        for msg in recent_msgs:
+            role = "user" if msg["role"] == "user" else "assistant"
+            chat_messages.append({"role": role, "content": msg["content"]})
 
-        # Generate AI response via HF API
+        # Generate response from OpenAI GPT-3.5
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
-                reply = ""
                 try:
-                    result = client.text_generation(
-                        model="OpenAssistant/oa-mini-7b",  # small, reliable model
-                        prompt=full_prompt,
-                        max_new_tokens=150,
-                        do_sample=True,
+                    response = openai.ChatCompletion.create(
+                        model="gpt-3.5-turbo",
+                        messages=chat_messages,
                         temperature=0.7,
-                        max_time=30.0  # safe timeout for Streamlit Cloud
+                        max_tokens=200
                     )
-
-                    # Extract text from API response
-                    if isinstance(result, list) and result and "generated_text" in result[0]:
-                        raw_reply = result[0]["generated_text"]
-                    elif isinstance(result, str):
-                        raw_reply = result
-                    else:
-                        raw_reply = ""
-
-                    # Remove echoed prompt
-                    reply = raw_reply.split("Assistant:")[-1].strip()
-                    if not reply:
-                        reply = "BudgetBuddy couldn't generate a response. Try asking differently."
-
-                except Exception:
-                    print("--- CHATBOT ERROR ---")
-                    print(traceback.format_exc())
-                    reply = "BudgetBuddy failed to respond due to a connection issue. Please try again."
+                    reply = response.choices[0].message.content.strip()
+                except Exception as e:
+                    print("ERROR:", e)
+                    reply = "BudgetBuddy failed to respond. Please try again."
 
                 st.markdown(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
+
+    # Optional: Reset chat button
+    if st.button("Reset Chat"):
+        st.session_state.messages = []
+        st.experimental_rerun()
