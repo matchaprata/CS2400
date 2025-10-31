@@ -1,4 +1,5 @@
 import streamlit as st
+from openai import OpenAI
 
 st.title('Getting started')
 st.write(
@@ -144,3 +145,24 @@ with tab2:
     st.write(
         '- [MoneySense](https://www.moneysense.gov.sg/): A Singapore government initiative that provides educational resources on personal finance and investing.'
     )
+
+    client = OpenAI(api_key=st.secrets["openai_api_key"])
+    st.title('Ask BudgetBuddy')
+
+    if 'messages' not in st.session_state:
+        st.session_state.messages = []
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+    if prompt := st.chat_input("What is investing?"):
+        st.chat_message("user").markdown(prompt)
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        
+    with st.chat_message('assistant'):
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=st.session_state.messages
+        )
+        reply = response.choices[0].message.content
+        st.markdown(reply)
+    st.session_state.messages.append({"role": "assistant", "content": response.choices[0].message.content})
