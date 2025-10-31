@@ -3,3 +3,4 @@ streamlit
 pandas
 matplotlib
 requests
+huggingface_hub>=0.16.0
