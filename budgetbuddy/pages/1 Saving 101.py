@@ -107,10 +107,4 @@ with tab2:
 
                     st.markdown(reply)
                     st.session_state.messages.append({"role": "assistant", "content": reply})
-
-        # Reset chat button
-        if st.button("Reset Chat"):
-            st.session_state.messages = []
-            st.experimental_rerun()
-
-        
+    
