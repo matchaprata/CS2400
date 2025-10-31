@@ -106,3 +106,5 @@ with tab2:
     if st.button("Reset Chat"):
         st.session_state.messages = []
         st.experimental_rerun()
+
+    st.write("API Key loaded:", "Yes" if st.secrets["OPENAI_API_KEY"] else "No")
