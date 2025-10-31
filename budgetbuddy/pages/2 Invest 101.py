@@ -73,18 +73,19 @@ with tab2:
     openai.api_key = st.secrets["OPENAI_API_KEY"]
 
     # User input
-    if prompt := st.chat_input("Ask BudgetBuddy anything"):
+    prompt = st.chat_input("Ask BudgetBuddy anything")
+    if prompt:
         st.chat_message("user").markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-        # Keep last 6 messages for context
+        # Build last 6 messages for context
         recent_msgs = st.session_state.messages[-6:]
         chat_messages = []
         for msg in recent_msgs:
             role = "user" if msg["role"] == "user" else "assistant"
             chat_messages.append({"role": role, "content": msg["content"]})
 
-        # Generate response from OpenAI GPT-3.5
+        # Generate response
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 try:
@@ -96,23 +97,14 @@ with tab2:
                     )
                     reply = response.choices[0].message.content.strip()
                 except Exception as e:
-                    print("ERROR:", e)
+                    st.error(f"Error from OpenAI: {e}")
                     reply = "BudgetBuddy failed to respond. Please try again."
 
                 st.markdown(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
 
-    # Optional: Reset chat button
+    # Reset chat button
     if st.button("Reset Chat"):
         st.session_state.messages = []
         st.experimental_rerun()
-
-    response = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
-    messages=chat_messages,
-    temperature=0.7,
-    max_tokens=200
-    )
-    reply = response.choices[0].message.content.strip()
-    st.write(reply)  # debug
 
