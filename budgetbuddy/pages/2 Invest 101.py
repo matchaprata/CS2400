@@ -2,6 +2,8 @@ import streamlit as st
 import os
 import traceback
 from huggingface_hub import InferenceClient
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
 
 st.title('Getting started')
 st.write(
@@ -64,7 +66,9 @@ with tab2:
 
     st.subheader("Ask BudgetBuddy")
 
-    # Initialize session state
+    st.subheader("Ask BudgetBuddy")
+
+    # Initialize conversation history
     if 'messages' not in st.session_state:
         st.session_state.messages = []
 
@@ -73,11 +77,11 @@ with tab2:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # Load tiny model (fits in Streamlit Cloud)
+    # Load tiny model for Streamlit Cloud
     @st.cache_resource(show_spinner=False)
     def load_model():
-        tokenizer = AutoTokenizer.from_pretrained("gpt2-medium")
-        model = AutoModelForCausalLM.from_pretrained("gpt2-medium")
+        tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
+        model = AutoModelForCausalLM.from_pretrained("distilgpt2")
         return tokenizer, model
 
     tokenizer, model = load_model()
@@ -87,7 +91,7 @@ with tab2:
         st.chat_message("user").markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-        # Keep last 6 messages to avoid long prompt
+        # Keep last 6 messages to reduce prompt size
         recent_msgs = st.session_state.messages[-6:]
         full_prompt = ""
         for msg in recent_msgs:
@@ -102,12 +106,13 @@ with tab2:
                     inputs = tokenizer(full_prompt, return_tensors="pt")
                     outputs = model.generate(
                         **inputs,
-                        max_new_tokens=150,
+                        max_new_tokens=100,
                         do_sample=True,
                         temperature=0.7,
                         pad_token_id=tokenizer.eos_token_id
                     )
                     reply = tokenizer.decode(outputs[0], skip_special_tokens=True)
+                    # Extract assistant portion
                     reply = reply.split("Assistant:")[-1].strip()
                     if not reply:
                         reply = "BudgetBuddy couldn't generate a response. Try asking differently."
