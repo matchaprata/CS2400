@@ -146,31 +146,4 @@ with tab2:
         '- [MoneySense](https://www.moneysense.gov.sg/): A Singapore government initiative that provides educational resources on personal finance and investing.'
     )
 
-    API_URL = "https://api-inference.huggingface.co/models/gpt2"
-    HEADERS = {"Authorization": f"Bearer {st.secrets['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']}"}
-    st.title('Ask BudgetBuddy')
-
-    if 'messages' not in st.session_state:
-        st.session_state.messages = []
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
-    if prompt := st.chat_input("What is investing?"):
-        st.chat_message("user").markdown(prompt)
-        st.session_state.messages.append({"role": "user", "content": prompt})
-
-        full_prompt = '\n'.join([f'{m['role']}: {m['content']}' for m in st.session_state.messages])
-        
-    with st.chat_message('assistant'):
-        with st.spinner('Thinking...'):
-            response = requests.post(
-                API_URL,
-                headers=HEADERS,
-                json={"inputs": full_prompt, 'parameters': {"max_new_tokens": 150}},
-        )
-            if response.status_code == 150:
-                reply = response.json()[0]['generated text'].split('assistant: ')[-1].strip()
-            else:
-                reply = f'Error: {response.status_code} - {response.text}'
-        
-            st.markdown(reply)
+    
