@@ -4,5 +4,3 @@ matplotlib
 requests
 huggingface_hub>=0.16.0
 streamlit
-torch==2.2.0+cpu --find-links https://download.pytorch.org/whl/cpu
-transformers
