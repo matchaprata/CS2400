@@ -2,5 +2,5 @@ streamlit-calendar
 pandas
 matplotlib
 requests
-openai
+openai==0.28
 streamlit
