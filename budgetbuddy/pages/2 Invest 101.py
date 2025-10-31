@@ -99,11 +99,11 @@ with tab2:
                     result = client.text_generation(
                         model="tiiuae/falcon-7b-instruct",
                         prompt=full_prompt, 
-                        max_new_tokens=200,
+                        max_new_tokens=100,
                         # Adding settings to increase stability
                         do_sample=True,
                         temperature=0.7,
-                        max_time=30.0 # Set a max time to prevent infinite waiting
+                        max_time=60.0 # Set a max time to prevent infinite waiting
                     )
                     
                     # --- MODIFIED: Robust processing of the result ---
