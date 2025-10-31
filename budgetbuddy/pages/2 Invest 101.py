@@ -2,24 +2,22 @@ import streamlit as st
 import os
 from huggingface_hub import InferenceClient
 
-# Set up Hugging Face API key
-# Note: In a production Streamlit Cloud environment, st.secrets["HF_TOKEN"] is the correct way
-# to access the key. We ensure it's loaded here for the client initialization.
-# os.environ["HF_TOKEN"] = st.secrets["HF_TOKEN"] 
-
-# Initialize InferenceClient
-# Assuming the HF_TOKEN environment variable is correctly set in the runtime environment
-# For this example, we will assume st.secrets works or the token is available via the environment.
-# If running locally without st.secrets, you might need to set the token directly:
-# client = InferenceClient(token="YOUR_HUGGING_FACE_TOKEN_HERE")
-# In the canvas environment, we rely on the environment being set up correctly.
+# --- Streamlit Cloud / HF Token Setup ---
+# The correct way to handle this in Streamlit Cloud is using st.secrets.
+# We modify the initialization to be more robust for different environments.
 try:
-    # Use st.secrets if available (Streamlit Cloud convention)
-    hf_token = st.secrets["HF_TOKEN"]
+    # 1. Try to read from Streamlit secrets (Cloud environment)
+    hf_token = st.secrets.get("HF_TOKEN")
 except:
-    # Fallback to os.environ (standard environment variable)
+    # 2. Fallback to standard environment variable
     hf_token = os.environ.get("HF_TOKEN", None)
 
+if not hf_token:
+    # If token is still missing, display a warning placeholder instead of crashing the app
+    st.warning("Hugging Face API Token (HF_TOKEN) not found. Chatbot functionality may be disabled. Please configure it in st.secrets.")
+
+# Initialize InferenceClient
+# The 'token' argument is the preferred way to pass the API key.
 client = InferenceClient(token=hf_token)
 
 st.title('Getting started')
@@ -97,24 +95,21 @@ with tab2:
         st.session_state.messages.append({"role": "user", "content": prompt})
 
         # Build full prompt for AI by joining all previous messages
-        # Note: This is a simple context building approach for instruction models.
-        # For better performance, a dedicated chat template (e.g., in a system prompt) is recommended.
         full_prompt = '\n'.join([f"{m['role']}: {m['content']}" for m in st.session_state.messages])
 
         # Get AI response from Falcon 7B model
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 try:
-                    # --- FIX APPLIED HERE ---
-                    # Changed 'inputs' to the correct keyword 'prompt'
+                    # Using the corrected 'prompt' keyword
                     result = client.text_generation(
                         model="tiiuae/falcon-7b-instruct",
                         prompt=full_prompt, 
                         max_new_tokens=200
                     )
                     
-                    # Hugging Face InferenceClient may return a string or a list of dicts.
-                    # We adapt the parsing based on what the client returns for text generation.
+                    # Process the result
+                    raw_reply = ""
                     if isinstance(result, str):
                         raw_reply = result
                     elif isinstance(result, list) and result and "generated_text" in result[0]:
@@ -122,19 +117,21 @@ with tab2:
                     else:
                         raw_reply = "Could not parse model response."
                         
-                    # Clean up the reply, specifically removing the prompt structure the model might echo
+                    # Clean up the reply
                     reply = raw_reply.split("assistant:")[-1].strip()
                     
-                    # Ensure the response is not empty
                     if not reply:
                         reply = "Sorry, BudgetBuddy couldn't generate a response for that query."
                         
                 except Exception as e:
-                    # Provide an informative error, but hide complex internal errors from the user
-                    if "unexpected keyword argument 'inputs'" in str(e):
-                        reply = "Configuration Error: The keyword for the prompt is incorrect."
-                    else:
-                        reply = f"Sorry, BudgetBuddy is having trouble connecting to the model right now. ({e})"
+                    # IMPORTANT: Print the full exception to the console for detailed debugging
+                    import traceback
+                    print("--- CHATBOT ERROR DETAILS ---")
+                    print(traceback.format_exc())
+                    print("-----------------------------")
+                    
+                    # Display a simplified error to the user
+                    reply = "Sorry, BudgetBuddy is having trouble connecting to the model right now. Please check your **HF_TOKEN** configuration or try again later."
 
             st.markdown(reply)
             st.session_state.messages.append({"role": "assistant", "content": reply})
