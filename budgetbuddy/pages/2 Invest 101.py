@@ -146,8 +146,7 @@ with tab2:
         '- [MoneySense](https://www.moneysense.gov.sg/): A Singapore government initiative that provides educational resources on personal finance and investing.'
     )
 
-    API_URL = "https://api-inference.huggingface.co/models/gpt2"
-    HEADERS = {"Authorization": f"Bearer {st.secrets['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']}"}
+    api_key = st.secrets["HF_TOKEN"]
     st.title('Ask BudgetBuddy')
 
     if 'messages' not in st.session_state:
