@@ -39,15 +39,96 @@ with tab1:
         )
         
     st.subheader('Investment Options')
-    # Use the determined 'option' for investment recommendations
     if option == 'Low':
-        st.write('- Bonds, Cash (Focus on preserving capital)')
+        st.write(
+         'Based on your risk appetite, here are some investment options to consider:'
+        )
+        st.write(
+            '- Bonds'
+        )
+        st.write(
+            'A bond is a fixed-income investment product where individuals lend money to a government or company at a specified interest rate for a predetermined period.'
+            'Examples include the Singapore Savings Bonds (SSB) and the United States Treasuries.'
+     )
+        st.write(
+         '- Cash'
+        )
+        st.write(
+         'Cash investments include savings accounts, money market accounts, and certificates of deposit (CDs). These options offer low risk and high liquidity but typically provide lower returns compared to other investment types.'
+        )
+    
     elif option == 'Moderate':
-        st.write('- Bonds, Cash, Mutual Funds, ETFs (A balanced approach)')
+        st.write(
+         'Based on your risk appetite, here are some investment options to consider:'
+        )
+        st.write(
+            '- Bonds'
+        )
+        st.write(
+            'A bond is a fixed-income investment product where individuals lend money to a government or company at a specified interest rate for a predetermined period.'
+            'Examples include the Singapore Savings Bonds (SSB) and the United States Treasuries.'
+     )
+        st.write(
+         '- Cash'
+        )
+        st.write(
+         'Cash investments include savings accounts, money market accounts, and certificates of deposit (CDs). These options offer low risk and high liquidity but typically provide lower returns compared to other investment types.'
+        )
+        st.write(
+            '- Mutual Funds'
+        )
+        st.write(
+            'Mutual funds pool money from multiple investors to invest in a diversified portfolio of stocks, bonds, or other securities. They are managed by professional fund managers and offer diversification and professional management.'
+            'Examples include the Vanguard 500 Index Fund and the Fidelity 500 Index Fund.'     
+     )
+        st.write(
+         '- Exchange-Traded Funds (ETFs)'
+        )
+        st.write(
+            'ETFs are similar to mutual funds but trade on stock exchanges like individual stocks. They offer diversification and can be bought and sold throughout the trading day.'
+            'Examples include the SPDR S&P 500 ETF Trust and the Invesco QQQ ETF.'
+          )
+    
     elif option == 'High':
-        st.write('- Bonds, Cash, Mutual Funds, ETFs, Stocks (Potential for higher growth, but higher volatility)')
+        st.write(
+         'Based on your risk appetite, here are some investment options to consider:'
+        )
+        st.write(
+            '- Bonds'
+        )
+        st.write(
+            'A bond is a fixed-income investment product where individuals lend money to a government or company at a specified interest rate for a predetermined period.'
+            'Examples include the Singapore Savings Bonds (SSB) and the United States Treasuries.'
+     )
+        st.write(
+         '- Cash'
+        )
+        st.write(
+         'Cash investments include savings accounts, money market accounts, and certificates of deposit (CDs). These options offer low risk and high liquidity but typically provide lower returns compared to other investment types.'
+        )
+        st.write(
+            '- Mutual Funds'
+        )
+        st.write(
+            'Mutual funds pool money from multiple investors to invest in a diversified portfolio of stocks, bonds, or other securities. They are managed by professional fund managers and offer diversification and professional management.'
+            'Examples include the Vanguard 500 Index Fund and the Fidelity 500 Index Fund.'     
+     )
+        st.write(
+         '- Exchange-Traded Funds (ETFs)'
+        )
+        st.write(
+            'ETFs are similar to mutual funds but trade on stock exchanges like individual stocks. They offer diversification and can be bought and sold throughout the trading day.'
+            'Examples include the SPDR S&P 500 ETF Trust and the Invesco QQQ ETF.'
+          )
+        st.write(
+            '- Stocks'
+        )
+        st.write(
+            'Stocks represent ownership in a company. You can profit from the increase in the share price, or earn dividends, or both. Risks vary according to the type of company you choose to buy stocks from.'     
+     )
+        
     else:
-        st.write('Please select an investment horizon to see suggested options.')
+        st.write('Please select an option to proceed.')
 
 # Tab 2: Resources + Chatbot
 with tab2:
