@@ -159,17 +159,17 @@ with tab2:
         st.chat_message("user").markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-        full_prompt = '\n'.join([f"{m['role']}: {m['content']}" for m in st.session_state.messages])
+        full_prompt = '\n'.join([f'{m['role']}: {m['content']}' for m in st.session_state.messages])
         
-        with st.chat_message('assistant'):
-            with st.spinner('Thinking...'):
-                response = requests.post(
-                    API_URL,
-                    headers=HEADERS,
-                    json={"inputs": full_prompt, 'parameters': {"max_new_tokens": 200}},
-            )
-            if response.status_code == 200:
-                reply = response.json()[0]['generated_text'].split('assistant: ')[-1].strip()
+    with st.chat_message('assistant'):
+        with st.spinner('Thinking...'):
+            response = requests.post(
+                API_URL,
+                headers=HEADERS,
+                json={"inputs": full_prompt, 'parameters': {"max_new_tokens": 150}},
+        )
+            if response.status_code == 150:
+                reply = response.json()[0]['generated text'].split('assistant: ')[-1].strip()
             else:
                 reply = f'Error: {response.status_code} - {response.text}'
         
