@@ -147,7 +147,7 @@ with tab2:
     )
 
     api_key = st.secrets["HF_TOKEN"]
-    st.title('Ask BudgetBuddy')
+    st.subheader('Ask BudgetBuddy')
 
     if 'messages' not in st.session_state:
         st.session_state.messages = []
