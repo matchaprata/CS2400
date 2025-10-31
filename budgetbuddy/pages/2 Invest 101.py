@@ -96,9 +96,9 @@ with tab2:
                 try:
                     # Using the corrected 'prompt' keyword
                     result = client.text_generation(
-                        model="tiiuae/falcon-7b-chat",
+                        model="tiiuae/falcon-3b-instruct",
                         prompt=full_prompt, 
-                        max_new_tokens=100,
+                        max_new_tokens=200,
                         # Adding settings to increase stability
                         do_sample=True,
                         temperature=0.7,
