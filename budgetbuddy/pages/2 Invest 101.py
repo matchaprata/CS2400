@@ -1,9 +1,6 @@
 import streamlit as st
-import os
-import traceback
 from huggingface_hub import InferenceClient
-from transformers import AutoTokenizer, AutoModelForCausalLM
-import torch
+import traceback
 
 st.title('Getting started')
 st.write(
@@ -64,61 +61,63 @@ with tab2:
 
     st.subheader('Ask BudgetBuddy')
 
-    st.subheader("Ask BudgetBuddy")
-
-    st.subheader("Ask BudgetBuddy")
-
     # Initialize conversation history
     if 'messages' not in st.session_state:
         st.session_state.messages = []
 
-    # Display conversation history
+    # Display previous messages
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # Load tiny model for Streamlit Cloud
-    @st.cache_resource(show_spinner=False)
-    def load_model():
-        tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
-        model = AutoModelForCausalLM.from_pretrained("distilgpt2")
-        return tokenizer, model
-
-    tokenizer, model = load_model()
+    # Hugging Face client
+    HF_TOKEN = st.secrets["HF_TOKEN"]  # store your token in Streamlit secrets
+    client = InferenceClient(HF_TOKEN)
 
     # User input
     if prompt := st.chat_input("Ask BudgetBuddy anything"):
         st.chat_message("user").markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-        # Keep last 6 messages to reduce prompt size
-        recent_msgs = st.session_state.messages[-6:]
+        # Keep last 6 messages to avoid huge prompts
+        recent_messages = st.session_state.messages[-6:]
         full_prompt = ""
-        for msg in recent_msgs:
+        for msg in recent_messages:
             role = "User" if msg["role"] == "user" else "Assistant"
             full_prompt += f"{role}: {msg['content']}\n"
         full_prompt += "Assistant:"
 
-        # Generate response
+        # Generate AI response via HF API
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
+                reply = ""
                 try:
-                    inputs = tokenizer(full_prompt, return_tensors="pt")
-                    outputs = model.generate(
-                        **inputs,
-                        max_new_tokens=100,
+                    result = client.text_generation(
+                        model="OpenAssistant/oa-mini-7b",  # small, reliable model
+                        prompt=full_prompt,
+                        max_new_tokens=150,
                         do_sample=True,
                         temperature=0.7,
-                        pad_token_id=tokenizer.eos_token_id
+                        max_time=30.0  # safe timeout for Streamlit Cloud
                     )
-                    reply = tokenizer.decode(outputs[0], skip_special_tokens=True)
-                    # Extract assistant portion
-                    reply = reply.split("Assistant:")[-1].strip()
+
+                    # Extract text from API response
+                    if isinstance(result, list) and result and "generated_text" in result[0]:
+                        raw_reply = result[0]["generated_text"]
+                    elif isinstance(result, str):
+                        raw_reply = result
+                    else:
+                        raw_reply = ""
+
+                    # Remove echoed prompt
+                    reply = raw_reply.split("Assistant:")[-1].strip()
                     if not reply:
                         reply = "BudgetBuddy couldn't generate a response. Try asking differently."
-                except Exception as e:
-                    print("ERROR:", e)
-                    reply = "BudgetBuddy failed to respond due to an internal error."
+
+                except Exception:
+                    print("--- CHATBOT ERROR ---")
+                    print(traceback.format_exc())
+                    reply = "BudgetBuddy failed to respond due to a connection issue. Please try again."
 
                 st.markdown(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
