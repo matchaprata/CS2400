@@ -62,72 +62,68 @@ with tab2:
 
     st.subheader('Ask BudgetBuddy')
 
-    if 'messages' not in st.session_state:
-        # Initialize conversation history
-        st.session_state.messages = []
+# Initialize session state
+if 'messages' not in st.session_state:
+    st.session_state.messages = []
 
-    # Display conversation history
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+# Display conversation history
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
-    HF_TOKEN = st.secrets["HF_TOKEN"]  # make sure you have this in your Streamlit secrets
-    client = InferenceClient(HF_TOKEN)
+# Hugging Face client
+HF_TOKEN = st.secrets["HF_TOKEN"]
+client = InferenceClient(HF_TOKEN)
 
-    # User input
-    if prompt := st.chat_input("Ask BudgetBuddy anything"):
-        # Display user message
-        st.chat_message("user").markdown(prompt)
-        st.session_state.messages.append({"role": "user", "content": prompt})
+# User input
+if prompt := st.chat_input("Ask BudgetBuddy anything"):
+    st.chat_message("user").markdown(prompt)
+    st.session_state.messages.append({"role": "user", "content": prompt})
 
-        # --- MODIFIED: Use a better structured prompt for Instruction-tuned models ---
-        # The Falcon-7b-instruct model sometimes prefers a structured format.
-        full_prompt = ""
-        for msg in st.session_state.messages:
-            if msg["role"] == "user":
-                full_prompt += f"User: {msg['content']}\n"
-            else:
-                full_prompt += f"Assistant: {msg['content']}\n"
-        full_prompt += "Assistant:" # This is crucial to prompt the model to generate the next assistant response
+    # Truncate last 6 messages (3 user + 3 assistant) to prevent huge prompts
+    recent_messages = st.session_state.messages[-6:]
 
-        with st.chat_message("assistant"):
-            with st.spinner("Thinking..."):
-                reply = ""
-                try:
-                    # Using the corrected 'prompt' keyword
-                    result = client.text_generation(
-                        model="tiiuae/falcon-3b-instruct",
-                        prompt=full_prompt, 
-                        max_new_tokens=200,
-                        # Adding settings to increase stability
-                        do_sample=True,
-                        temperature=0.7,
-                        max_time=60.0 # Set a max time to prevent infinite waiting
-                    )
-                    
-                    # --- MODIFIED: Robust processing of the result ---
+    # Build structured prompt
+    full_prompt = ""
+    for msg in recent_messages:
+        if msg["role"] == "user":
+            full_prompt += f"User: {msg['content']}\n"
+        else:
+            full_prompt += f"Assistant: {msg['content']}\n"
+    full_prompt += "Assistant:"
+
+    # Generate response
+    with st.chat_message("assistant"):
+        with st.spinner("Thinking..."):
+            reply = ""
+            try:
+                result = client.text_generation(
+                    model="tiiuae/falcon-3b-instruct",
+                    prompt=full_prompt,
+                    max_new_tokens=100,
+                    do_sample=True,
+                    temperature=0.7,
+                    max_time=60.0
+                )
+
+                # Simplified extraction
+                if isinstance(result, list) and result and "generated_text" in result[0]:
+                    raw_reply = result[0]["generated_text"]
+                elif isinstance(result, str):
+                    raw_reply = result
+                else:
                     raw_reply = ""
-                    if isinstance(result, str):
-                        raw_reply = result
-                    elif isinstance(result, list) and result and "generated_text" in result[0]:
-                         raw_reply = result[0]["generated_text"]
-                    else:
-                        raise ValueError(f"Model returned unparseable content: {result}")
-                        
-                    # Clean up the reply, removing the prompt history the model might echo back
-                    reply = raw_reply.split("Assistant:")[-1].split("assistant:")[-1].strip()
-                    
-                    if not reply:
-                        reply = "Sorry, BudgetBuddy generated an empty response for that query. This often happens if the model is too busy."
-                        
-                except Exception as e:
-                    # Print the full exception to the console for detailed debugging
-                    print("--- CHATBOT ERROR DETAILS ---")
-                    print(traceback.format_exc())
-                    print("-----------------------------")
-                    
-                    # Display a simplified error to the user
-                    reply = "Sorry, BudgetBuddy failed to generate a response. This could be due to a timeout or connection issue with the model endpoint. Please try again."
+
+                # Remove prompt echoes
+                reply = raw_reply.split("Assistant:")[-1].strip()
+
+                if not reply:
+                    reply = "Sorry, BudgetBuddy couldn't generate a response. Try asking differently."
+
+            except Exception:
+                print("--- CHATBOT ERROR ---")
+                print(traceback.format_exc())
+                reply = "BudgetBuddy failed to respond. This is likely a timeout or connection issue."
 
             st.markdown(reply)
             st.session_state.messages.append({"role": "assistant", "content": reply})
